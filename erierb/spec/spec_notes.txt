@@ -1,0 +1,92 @@
+=begin
+ This uses RSpec and Capybara for BDD testing.
+ These are unit and integration tests.
+
+=end
+
+require_relative 'spec_helper'
+describe 'Care Reports' do
+
+	before do
+		login
+		visit '/infosurv/CARE_PROD/reports'
+	end
+
+	it 'logs in and makes an intial selection' do
+		select 'CARE International', :from => 'org'
+		select 'Indonesia', :from => 'branch'
+		select 'Survey 1', :from => 'report'
+		click_button 'View All'
+		
+		within('#stats') do
+			page.should have_content('Responses: 31')
+			page.should have_content('Total Questions 83')
+		end
+
+		all('#chart9 table tr').size.should eq(13)
+		verify_chart9_exists
+	end
+
+	it "Numbers the questions correctly" do
+		select 'CARE International', :from => 'org'
+		select 'Indonesia', :from => 'branch'
+		select 'Survey 1', :from => 'report'
+		click_button 'View All'
+
+		page.all('#resp').should_not have_content('0. RespondentID')
+	end
+
+	it 'Tests reset' do
+		select 'CARE International', :from => 'org'
+		select 'Indonesia', :from => 'branch'
+		select 'Survey 1', :from => 'report'
+		click_button 'View All'
+
+		click_link 'Change Selection'
+
+		within('#sidebar') do 
+			page.evaluate_script("($('#surveyFilterNavigation:visible').length > 0)").should eq(false)
+		end
+	end
+
+	it 'Tests Change selection' do
+		select 'CARE International', :from => 'org'
+		select 'Indonesia', :from => 'branch'
+		select 'Survey 1', :from => 'report'
+		click_button 'View All'
+
+		within('#stats') do
+			page.should have_content('Responses: 31')
+			page.should have_content('Total Questions 83')
+		end
+
+		click_link 'Change Selection'
+		click_button 'View Selection'
+
+		page.should have_content('Responses: 1')
+		page.should have_content('Total Questions 83')
+		#binding.pry
+
+	end
+
+	it 'should gracefully handle no selection data' do
+		select 'CARE International', :from => 'org'
+		select 'Horn of Africa', :from => 'branch'
+		select 'Survey 1', :from => 'report'
+		click_button 'View Selection'
+		within('#stats') do
+			page.find("#resp").text.should eq('0')
+		end
+	end
+
+	def login
+		visit '/infosurv/CARE_PROD/users/login'
+		fill_in 'Username', :with => 'paul.barrick@infosurv.com'
+		fill_in 'Password', :with => 'testpass'
+		click_button 'Submit'
+	end
+
+	def verify_chart9_exists
+		page.evaluate_script("$('#chart9 svg').length").should eq(1)
+	end
+end

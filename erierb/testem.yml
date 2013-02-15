@@ -1,0 +1,11 @@
+launchers: 
+     intergation:
+          command: "rspec spec"
+     headless: 
+          command: "HEADLESS=1 rspec spec"
+src_files: 
+- spec/*.rb
+- app/*.rb
+
+launch_in_dev:
+- headless
